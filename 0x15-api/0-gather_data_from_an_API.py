@@ -1,21 +1,30 @@
 #!/usr/bin/python3
-from ast import literal_eval
-import urllib.request
+'''A script that gathers employee name completed
+tasks and total number of tasks from an API
+'''
+
+import re
+import requests
 import sys
 
-if __name__ == "__main__":
-    # Fetch data from url
-    uid = sys.argv
-    req = urllib.request.Request('https://jsonplaceholder.typicode.' + 
-                        'com/todos/' + f'{int(uid[1])}')
-    with urllib.request.urlopen(req) as response:
-        fetched_data = response.read()
-        i = 0
-        for chrs in fetched_data:
-            if chrs == '/n':
-                fetched_data[i] = 'o'
-            i += 1
-        fetched_data = fetched_data.decode('utf-8')
-    
-    print(type(fetched_data))
-    print(fetched_data)
+REST_API = "https://jsonplaceholder.typicode.com"
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        if re.fullmatch(r'\d+', sys.argv[1]):
+            id = int(sys.argv[1])
+            emp_req = requests.get('{}/users/{}'.format(REST_API, id)).json()
+            task_req = requests.get('{}/todos'.format(REST_API)).json()
+            emp_name = emp_req.get('name')
+            tasks = list(filter(lambda x: x.get('userId') == id, task_req))
+            completed_tasks = list(filter(lambda x: x.get('completed'), tasks))
+            print(
+                'Employee {} is done with tasks({}/{}):'.format(
+                    emp_name,
+                    len(completed_tasks),
+                    len(tasks)
+                )
+            )
+            if len(completed_tasks) > 0:
+                for task in completed_tasks:
+                    print('\t {}'.format(task.get('title')))
